@@ -1,0 +1,69 @@
+以下是一个基于 **Java 线程池(https://open.toutiao.com/article/url/?param=2v5e9zftZJNoZpWrngDvc2q5DSn3MhQSpNNyscfvpTTysLJ9KEZbsG2f1x9FiVwCZ2K4MCxR8XBN7TkAMeTFaD2VswHmStP4hJws275xBfxS2Ruue9hbKxXKzX45CFkY1y7HXgp6h9UFc2eUXtEFYmvFx2QosdVUxJ33QmceZyRvUV2VKsqnsjDuUQeZkaKvYRpn7cKMo19o6EWeZreWTwA1mLaiEkkrSN84stKbbf9NsN4BsM&partner=agent_bot_7520145467502544393_default_content&version=3)**的线程分配示例代码，适用于多任务并发场景，通过线程池管理线程资源，避免频繁创建销毁线程的开销：
+
+核心代码：线程池任务分配
+
+
+import java.util.concurrent.*;
+
+public class ThreadPoolExample {
+    public static void main(String[] args) {
+        // 1. 创建线程池（核心参数可根据需求调整）
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            2,                  // 核心线程数（始终保持的线程数）
+            4,                  // 最大线程数（允许的最大线程数）
+            60,                 // 非核心线程空闲超时时间（秒）
+            TimeUnit.SECONDS,   // 超时时间单位
+            new LinkedBlockingQueue<>(10),  // 任务队列（容量为10）
+            Executors.defaultThreadFactory(),  // 线程工厂
+            new ThreadPoolExecutor.CallerRunsPolicy()  // 拒绝策略（任务满时由提交者线程执行）
+        );
+
+        // 2. 提交15个任务到线程池（模拟多任务场景）
+        for (int i = 0; i < 15; i++) {
+            int taskId = i;
+            executor.submit(() -> {
+                try {
+                    // 模拟任务执行（耗时1秒）
+                    Thread.sleep(1000);
+                    System.out.println("任务" + taskId + "执行完成，线程名：" + Thread.currentThread().getName());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+        }
+
+        // 3. 关闭线程池（等待所有任务完成后再关闭）
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
+                executor.shutdownNow(); // 超时未完成则强制关闭
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+        }
+        System.out.println("所有任务执行完毕，线程池已关闭");
+    }
+}
+ 
+
+关键说明
+
+- 线程池参数：
+
+- 核心线程数  2  + 最大线程数  4 ，表示最多同时运行4个线程，超出的任务会先进入队列（容量10），队列满后触发拒绝策略。
+- 拒绝策略  CallerRunsPolicy ：当任务过多时，由提交任务的线程（main线程）执行剩余任务，避免任务丢失。
+- 任务分配逻辑：
+线程池会自动管理线程的创建、复用和销毁，提交的15个任务会按以下流程执行：
+
+1. 前2个任务：直接创建核心线程执行。
+2. 第3-12个任务：进入队列等待。
+3. 第13-14个任务：创建非核心线程执行（此时达到最大线程数4）。
+4. 第15个任务：队列和线程池均满，触发拒绝策略，由main线程执行。
+
+扩展建议
+
+- 动态调整参数：根据CPU核心数（ Runtime.getRuntime().availableProcessors() ）和任务类型（CPU密集/IO密集）调整线程池参数，例如IO密集型任务可适当增加线程数。
+- 任务优先级：如需按优先级分配任务，可使用  PriorityBlockingQueue  作为任务队列。
+- 监控与优化：通过  executor.getActiveCount() 、 executor.getCompletedTaskCount()  监控线程池状态，避免任务堆积或资源浪费。
+
+如果需要其他语言（如Python、C++）的线程分配示例，或针对特定场景（如定时任务、并发控制）的实现，可以告诉我哦！
