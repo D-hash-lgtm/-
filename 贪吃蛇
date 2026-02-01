@@ -1,0 +1,99 @@
+以下是基于 Python + Pygame 实现的经典贪吃蛇游戏代码，结构清晰且易于理解：
+
+代码实现
+
+
+import pygame
+import random
+import sys
+
+# 初始化Pygame
+pygame.init()
+
+# 游戏设置
+WIDTH, HEIGHT = 800, 600
+GRID_SIZE = 20
+GRID_WIDTH = WIDTH // GRID_SIZE
+GRID_HEIGHT = HEIGHT // GRID_SIZE
+
+# 颜色定义
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+
+# 方向定义
+UP = (0, -1)
+DOWN = (0, 1)
+LEFT = (-1, 0)
+RIGHT = (1, 0)
+
+# 游戏窗口
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("贪吃蛇游戏")
+
+# 时钟控制速度
+clock = pygame.time.Clock()
+FPS = 10
+
+def draw_snake(snake):
+    """绘制蛇"""
+    for segment in snake:
+        rect = pygame.Rect(segment[0] * GRID_SIZE, segment[1] * GRID_SIZE, GRID_SIZE - 1, GRID_SIZE - 1)
+        pygame.draw.rect(screen, GREEN, rect)
+
+def draw_food(food):
+    """绘制食物"""
+    rect = pygame.Rect(food[0] * GRID_SIZE, food[1] * GRID_SIZE, GRID_SIZE - 1, GRID_SIZE - 1)
+    pygame.draw.rect(screen, RED, rect)
+
+def game_over(score):
+    """游戏结束界面"""
+    font = pygame.font.SysFont(None, 55)
+    text = font.render(f"游戏结束！得分: {score}", True, WHITE)
+    screen.blit(text, [WIDTH/6, HEIGHT/3])
+    pygame.display.update()
+    pygame.time.wait(2000)
+    pygame.quit()
+    sys.exit()
+
+def main():
+    """游戏主循环"""
+    # 初始化蛇（头部在中间）
+    snake = [(GRID_WIDTH // 2, GRID_HEIGHT // 2)]
+    direction = RIGHT  # 初始方向向右
+    next_direction = direction  # 用于处理方向切换延迟
+
+    # 初始化食物
+    food = (random.randint(0, GRID_WIDTH - 1), random.randint(0, GRID_HEIGHT - 1))
+
+    score = 0
+
+    while True:
+        # 事件处理
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                # 方向控制（避免反向移动）
+                if event.key == pygame.K_UP and direction != DOWN:
+                    next_direction = UP
+                elif event.key == pygame.K_DOWN and direction != UP:
+                    next_direction = DOWN
+                elif event.key == pygame.K_LEFT and direction != RIGHT:
+                    next_direction = LEFT
+                elif event.key == pygame.K_RIGHT and direction != LEFT:
+                    next_direction = RIGHT
+
+        # 更新方向（确保每帧只改变一次）
+        direction = next_direction
+
+        # 移动蛇（添加新头部，删除尾部）
+        head_x, head_y = snake[0]
+        new_head = (head_x + direction[0], head_y + direction[1])
+        snake.insert(0, new_head)
+
+       
+ 
